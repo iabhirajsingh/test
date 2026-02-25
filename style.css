@@ -1,0 +1,177 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: #0d0d1a;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Layout ─────────────────────────────────────────── */
+.container {
+  display: flex;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7);
+}
+
+/* ── History panel ───────────────────────────────────── */
+.history {
+  width: 210px;
+  background: #0e0e1c;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 12px;
+  border-right: 1px solid #1e1e30;
+}
+
+.history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  color: #555;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.clear-hist-btn {
+  background: none;
+  border: 1px solid #2a2a3a;
+  color: #555;
+  padding: 3px 8px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 11px;
+  transition: background 0.15s, color 0.15s;
+}
+.clear-hist-btn:hover {
+  background: #1e1e2e;
+  color: #ccc;
+}
+
+.history-list {
+  list-style: none;
+  overflow-y: auto;
+  flex: 1;
+  scrollbar-width: thin;
+  scrollbar-color: #2a2a3a transparent;
+}
+
+.history-list li {
+  padding: 9px 4px;
+  border-bottom: 1px solid #15151f;
+  cursor: pointer;
+  transition: padding-left 0.15s;
+}
+.history-list li:hover { padding-left: 8px; }
+
+.h-expr   { color: #444; font-size: 11px; margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.h-result { color: #e0e0f0; font-size: 17px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── Calculator ──────────────────────────────────────── */
+.calculator {
+  background: #14142a;
+  padding: 20px;
+  width: 300px;
+}
+
+/* Display */
+.display {
+  background: #0a0a18;
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-bottom: 14px;
+  min-height: 88px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-end;
+}
+
+.expr {
+  color: #484868;
+  font-size: 13px;
+  min-height: 18px;
+  text-align: right;
+  word-break: break-all;
+  margin-bottom: 4px;
+}
+
+.current {
+  color: #f0f0ff;
+  font-size: 38px;
+  font-weight: 300;
+  text-align: right;
+  word-break: break-all;
+  max-width: 100%;
+  transition: font-size 0.1s;
+}
+
+/* ── Button grid ─────────────────────────────────────── */
+.buttons {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 7px;
+}
+
+.btn {
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  padding: 14px 6px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: filter 0.12s, transform 0.08s;
+}
+.btn:active { transform: scale(0.93); }
+.btn:hover  { filter: brightness(1.2); }
+
+/* Variants */
+.btn.sci {
+  background: #1e1e38;
+  color: #8888cc;
+  font-size: 13px;
+}
+
+.btn.num {
+  background: #1c1c30;
+  color: #e8e8ff;
+}
+
+.btn.op {
+  background: #26184a;
+  color: #bb99ff;
+  font-size: 18px;
+}
+
+.btn.ctrl {
+  background: #1e1828;
+  color: #aa88aa;
+}
+
+.btn.ctrl.danger {
+  color: #ff8888;
+}
+
+.btn.eq {
+  background: linear-gradient(135deg, #5533bb, #7744dd);
+  color: #fff;
+  font-size: 22px;
+  font-weight: 400;
+  box-shadow: 0 4px 16px rgba(100, 60, 220, 0.35);
+}
+.btn.eq:hover { filter: brightness(1.15); }
+
+.btn.zero {
+  grid-column: span 2;
+  text-align: left;
+  padding-left: 22px;
+}
