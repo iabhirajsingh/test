@@ -8,6 +8,7 @@ import type { TrackMetadata } from "@/lib/types";
 export default function DistributePage() {
   const router = useRouter();
   const [metadata, setMetadata] = useState<Partial<TrackMetadata> | null>(null);
+  const [coverUrl, setCoverUrl] = useState<string>("");
   const [selected, setSelected] = useState<Set<string>>(new Set(DEFAULT_SELECTED));
   const [releaseDate, setReleaseDate] = useState("");
   const [distributing, setDistributing] = useState(false);
@@ -19,6 +20,7 @@ export default function DistributePage() {
     if (!raw) { router.push("/upload"); return; }
     const m = JSON.parse(raw) as Partial<TrackMetadata>;
     setMetadata(m);
+    setCoverUrl(sessionStorage.getItem("droptrack_cover") || "");
     setReleaseDate(m.releaseDate || new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0]);
   }, [router]);
 
@@ -53,7 +55,7 @@ export default function DistributePage() {
         id: data.releaseId,
         title: metadata?.title || "Unknown",
         artist: metadata?.artist || "Unknown",
-        coverUrl: sessionStorage.getItem("droptrack_cover") || "",
+        coverUrl: coverUrl,
         status: "distributing",
         platforms: Array.from(selected),
         submittedAt: new Date().toISOString(),
@@ -157,8 +159,8 @@ export default function DistributePage() {
              style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
           <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center"
                style={{ background: "linear-gradient(135deg, #7c3aed44, #06b6d444)" }}>
-            {sessionStorage.getItem("droptrack_cover") ? (
-              <img src={sessionStorage.getItem("droptrack_cover")!} alt="" className="w-full h-full object-cover" />
+            {coverUrl ? (
+              <img src={coverUrl} alt="" className="w-full h-full object-cover" />
             ) : (
               <span className="text-2xl">🎵</span>
             )}

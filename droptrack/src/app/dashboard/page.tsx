@@ -129,7 +129,7 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-black tracking-tight">Artist Dashboard</h1>
-            <p style={{ color: "var(--muted)" }}>Welcome back, AURIS</p>
+            <p style={{ color: "var(--muted)" }}>Your releases & royalties</p>
           </div>
           <Link href="/upload"
                 className="flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-sm text-white transition-all hover:scale-105"
@@ -139,20 +139,20 @@ export default function DashboardPage() {
         </div>
 
         {/* Stats row */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8">
           {[
             { label: "Total Streams", value: fmtNum(totalStreams), delta: "+12%", icon: "▶" },
             { label: "Revenue (USD)", value: `$${totalRevenue.toFixed(2)}`, delta: "+8%", icon: "$" },
             { label: "Live Releases", value: String(liveCount), delta: "", icon: "🎵" },
             { label: "Platforms", value: "20", delta: "", icon: "🌍" },
           ].map((stat) => (
-            <div key={stat.label} className="rounded-2xl p-6" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+            <div key={stat.label} className="rounded-2xl p-4 sm:p-6" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
               <div className="flex items-center justify-between mb-3">
-                <span className="text-sm" style={{ color: "var(--muted)" }}>{stat.label}</span>
-                <span className="w-8 h-8 rounded-lg flex items-center justify-center text-sm"
+                <span className="text-xs sm:text-sm" style={{ color: "var(--muted)" }}>{stat.label}</span>
+                <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-sm"
                       style={{ background: "rgba(124,58,237,0.2)" }}>{stat.icon}</span>
               </div>
-              <div className="text-3xl font-black mb-1">{stat.value}</div>
+              <div className="text-2xl sm:text-3xl font-black mb-1 truncate">{stat.value}</div>
               {stat.delta && (
                 <div className="text-xs font-semibold" style={{ color: "#34d399" }}>{stat.delta} this month</div>
               )}
