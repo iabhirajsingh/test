@@ -54,7 +54,7 @@ export default function UploadPage() {
 
   const handleFile = useCallback((f: File) => {
     const ok = ["audio/mpeg", "audio/wav", "audio/flac", "audio/aiff", "audio/ogg", "audio/mp4", "audio/aac", "audio/x-flac", "audio/x-wav"];
-    if (!ok.some((t) => f.type.startsWith("audio")) && !f.name.match(/\.(mp3|wav|flac|aiff|ogg|m4a|aac)$/i)) {
+    if (!ok.some((mime) => f.type.startsWith(mime)) && !f.name.match(/\.(mp3|wav|flac|aiff|ogg|m4a|aac)$/i)) {
       setError("Please upload an audio file (MP3, WAV, FLAC, AIFF, etc.)");
       return;
     }
@@ -69,8 +69,10 @@ export default function UploadPage() {
   const handleCoverFile = useCallback((f: File) => {
     if (!f.type.startsWith("image/")) return;
     setCoverFile(f);
-    const url = URL.createObjectURL(f);
-    setCoverPreview(url);
+    setCoverPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(f);
+    });
   }, []);
 
   const onDrop = useCallback(
@@ -247,7 +249,7 @@ export default function UploadPage() {
                            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleCoverFile(f); }} />
                   </label>
                   {coverPreview && (
-                    <button onClick={() => { setCoverPreview(null); setCoverFile(null); }}
+                    <button onClick={() => { setCoverPreview((prev) => { if (prev) URL.revokeObjectURL(prev); return null; }); setCoverFile(null); }}
                             className="text-sm" style={{ color: "var(--muted)" }}>Remove</button>
                   )}
                 </div>
