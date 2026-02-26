@@ -113,6 +113,7 @@ export default function UploadPage() {
           blobUrl: blob.url,
           filename: file.name,
           fileType: file.type,
+          fileSize: file.size,
           hasCover: !!coverFile,
         }),
       });
