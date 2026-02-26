@@ -3,12 +3,18 @@ import Anthropic from "@anthropic-ai/sdk";
 import { generateISRC, generateUPC, generateISWC, guessLanguageFromTitle } from "@/lib/isrc";
 import { TrackMetadata } from "@/lib/types";
 
+// Increase serverless function timeout to 60s (requires Vercel Pro/Hobby max)
+export const maxDuration = 60;
+
+// Audio metadata tags live in the first few KB — no need to download the whole file
+const METADATA_RANGE_BYTES = 512 * 1024; // 512 KB
+
 // We use music-metadata for server-side tag parsing
 // Dynamic import since it's ESM
-async function parseAudioTags(buffer: Buffer, mimeType: string) {
+async function parseAudioTags(buffer: Buffer, mimeType: string, fileSize?: number) {
   try {
     const mm = await import("music-metadata");
-    const meta = await mm.parseBuffer(buffer, { mimeType });
+    const meta = await mm.parseBuffer(buffer, { mimeType, size: fileSize }, { skipCovers: true });
     const { common, format } = meta;
     return {
       title: common.title,
@@ -158,23 +164,28 @@ export async function POST(req: NextRequest) {
     let fileType: string;
     let hasCover = false;
     let blobUrl: string | null = null;
+    let fileSize: number | undefined;
 
     const contentType = req.headers.get("content-type") || "";
 
     if (contentType.includes("application/json")) {
-      // Large file path: receive blob URL, fetch server-side (no 4.5 MB limit)
+      // Large file path: receive blob URL, fetch only first 512KB for tag parsing
       const body = await req.json();
       blobUrl = body.blobUrl;
       filename = body.filename;
       fileType = body.fileType || "audio/mpeg";
       hasCover = body.hasCover || false;
+      fileSize = body.fileSize as number | undefined;
 
       if (!blobUrl) {
         return NextResponse.json({ error: "No blobUrl provided" }, { status: 400 });
       }
 
-      const response = await fetch(blobUrl);
-      if (!response.ok) {
+      // Range-fetch only the first 512KB — audio tags are always at the start of the file
+      const response = await fetch(blobUrl, {
+        headers: { Range: `bytes=0-${METADATA_RANGE_BYTES - 1}` },
+      });
+      if (!response.ok && response.status !== 206) {
         return NextResponse.json({ error: "Failed to fetch audio from blob storage" }, { status: 500 });
       }
       const arrayBuffer = await response.arrayBuffer();
@@ -196,8 +207,8 @@ export async function POST(req: NextRequest) {
       hasCover = !!coverFile;
     }
 
-    // Parse existing embedded tags
-    const tags = await parseAudioTags(buffer, fileType);
+    // Parse existing embedded tags (pass fileSize so music-metadata can compute duration correctly)
+    const tags = await parseAudioTags(buffer, fileType, fileSize);
 
     // Generate IDs
     const isrc = (tags.isrc as string) || generateISRC();
@@ -265,7 +276,7 @@ export async function POST(req: NextRequest) {
       sampleRate: (tags.sampleRate as number) || 44100,
       channels: (tags.channels as number) || 2,
       format: (tags.codecName as string) || fileType,
-      fileSize: buffer.length,
+      fileSize: fileSize ?? buffer.length,
     };
 
     return NextResponse.json({
