@@ -69,11 +69,15 @@ export default function ReviewPage() {
     const fn = sessionStorage.getItem("droptrack_filename");
     const cover = sessionStorage.getItem("droptrack_cover");
     if (!raw) { router.push("/upload"); return; }
-    const parsed: AnalyzeResponse = JSON.parse(raw);
-    setData(parsed);
-    setMetadata(parsed.metadata);
-    setFilename(fn || "");
-    if (cover) setCoverPreview(cover);
+    try {
+      const parsed: AnalyzeResponse = JSON.parse(raw);
+      setData(parsed);
+      setMetadata(parsed.metadata);
+      setFilename(fn || "");
+      if (cover) setCoverPreview(cover);
+    } catch {
+      router.push("/upload");
+    }
   }, [router]);
 
   const update = (key: string, val: string) => {

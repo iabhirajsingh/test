@@ -138,14 +138,19 @@ Return ONLY valid JSON with this exact structure:
 
   const text = message.content[0].type === "text" ? message.content[0].text : "";
 
-  // Extract JSON from the response
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  // Strip markdown code fences if present (e.g. ```json ... ```)
+  const stripped = text.replace(/^```(?:json)?\s*/m, "").replace(/\s*```\s*$/m, "").trim();
+  const jsonMatch = stripped.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error("AI returned invalid response");
 
   return JSON.parse(jsonMatch[0]);
 }
 
 export async function POST(req: NextRequest) {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return NextResponse.json({ error: "Server configuration error: ANTHROPIC_API_KEY is not set" }, { status: 500 });
+  }
+
   const t0 = Date.now();
   try {
     const form = await req.formData();

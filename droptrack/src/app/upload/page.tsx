@@ -69,10 +69,9 @@ export default function UploadPage() {
   const handleCoverFile = useCallback((f: File) => {
     if (!f.type.startsWith("image/")) return;
     setCoverFile(f);
-    setCoverPreview((prev) => {
-      if (prev) URL.revokeObjectURL(prev);
-      return URL.createObjectURL(f);
-    });
+    const reader = new FileReader();
+    reader.onload = (e) => setCoverPreview((e.target?.result as string) ?? null);
+    reader.readAsDataURL(f);
   }, []);
 
   const onDrop = useCallback(
@@ -249,7 +248,7 @@ export default function UploadPage() {
                            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleCoverFile(f); }} />
                   </label>
                   {coverPreview && (
-                    <button onClick={() => { setCoverPreview((prev) => { if (prev) URL.revokeObjectURL(prev); return null; }); setCoverFile(null); }}
+                    <button onClick={() => { setCoverPreview(null); setCoverFile(null); }}
                             className="text-sm" style={{ color: "var(--muted)" }}>Remove</button>
                   )}
                 </div>
