@@ -18,10 +18,14 @@ export default function DistributePage() {
   useEffect(() => {
     const raw = sessionStorage.getItem("droptrack_metadata");
     if (!raw) { router.push("/upload"); return; }
-    const m = JSON.parse(raw) as Partial<TrackMetadata>;
-    setMetadata(m);
-    setCoverUrl(sessionStorage.getItem("droptrack_cover") || "");
-    setReleaseDate(m.releaseDate || new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0]);
+    try {
+      const m = JSON.parse(raw) as Partial<TrackMetadata>;
+      setMetadata(m);
+      setCoverUrl(sessionStorage.getItem("droptrack_cover") || "");
+      setReleaseDate(m.releaseDate || new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0]);
+    } catch {
+      router.push("/upload");
+    }
   }, [router]);
 
   const toggle = (id: string) => {
@@ -50,7 +54,8 @@ export default function DistributePage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       // Store release info for dashboard
-      const releases = JSON.parse(localStorage.getItem("droptrack_releases") || "[]");
+      let releases: unknown[] = [];
+      try { releases = JSON.parse(localStorage.getItem("droptrack_releases") || "[]"); } catch { /* start fresh */ }
       releases.unshift({
         id: data.releaseId,
         title: metadata?.title || "Unknown",
@@ -62,8 +67,9 @@ export default function DistributePage() {
         liveAt: data.estimatedLiveAt,
         streams: 0,
         revenue: 0,
+        metadata: metadata || {},
       });
-      localStorage.setItem("droptrack_releases", JSON.stringify(releases));
+      try { localStorage.setItem("droptrack_releases", JSON.stringify(releases)); } catch { /* storage full */ }
       setResult(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Distribution failed");

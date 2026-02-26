@@ -2,6 +2,7 @@
 import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { upload } from "@vercel/blob/client";
 
 const ACCEPT = ".mp3,.wav,.flac,.aiff,.ogg,.m4a,.aac";
 
@@ -69,10 +70,9 @@ export default function UploadPage() {
   const handleCoverFile = useCallback((f: File) => {
     if (!f.type.startsWith("image/")) return;
     setCoverFile(f);
-    setCoverPreview((prev) => {
-      if (prev) URL.revokeObjectURL(prev);
-      return URL.createObjectURL(f);
-    });
+    const reader = new FileReader();
+    reader.onload = (e) => setCoverPreview((e.target?.result as string) ?? null);
+    reader.readAsDataURL(f);
   }, []);
 
   const onDrop = useCallback(
@@ -99,13 +99,31 @@ export default function UploadPage() {
     }, 600);
 
     try {
-      const form = new FormData();
-      form.append("audio", file);
-      if (coverFile) form.append("cover", coverFile);
+      // Upload directly to Vercel Blob (bypasses Vercel's 4.5 MB function limit)
+      const blob = await upload(file.name, file, {
+        access: "public",
+        handleUploadUrl: "/api/blob-upload",
+      });
 
-      const res = await fetch("/api/analyze", { method: "POST", body: form });
+      // Send the blob URL to the analyze API
+      const res = await fetch("/api/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          blobUrl: blob.url,
+          filename: file.name,
+          fileType: file.type,
+          hasCover: !!coverFile,
+        }),
+      });
+
+      const contentType = res.headers.get("content-type") || "";
+      if (!contentType.includes("application/json")) {
+        const text = await res.text();
+        throw new Error(`Server error (${res.status}): ${text.slice(0, 120)}`);
+      }
+
       const data = await res.json();
-
       if (!res.ok) throw new Error(data.error || "Analysis failed");
 
       clearInterval(stepInterval);
@@ -249,7 +267,7 @@ export default function UploadPage() {
                            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleCoverFile(f); }} />
                   </label>
                   {coverPreview && (
-                    <button onClick={() => { setCoverPreview((prev) => { if (prev) URL.revokeObjectURL(prev); return null; }); setCoverFile(null); }}
+                    <button onClick={() => { setCoverPreview(null); setCoverFile(null); }}
                             className="text-sm" style={{ color: "var(--muted)" }}>Remove</button>
                   )}
                 </div>
