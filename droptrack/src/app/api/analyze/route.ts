@@ -14,7 +14,7 @@ const METADATA_RANGE_BYTES = 512 * 1024; // 512 KB
 async function parseAudioTags(buffer: Buffer, mimeType: string, fileSize?: number) {
   try {
     const mm = await import("music-metadata");
-    const meta = await mm.parseBuffer(buffer, { mimeType, size: fileSize, skipCovers: true });
+    const meta = await mm.parseBuffer(buffer, { mimeType, size: fileSize }, { skipCovers: true });
     const { common, format } = meta;
     return {
       title: common.title,
