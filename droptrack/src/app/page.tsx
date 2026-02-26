@@ -368,7 +368,7 @@ export default function Landing() {
       </section>
 
       {/* ── CTA Banner ───────────────────────────────────── */}
-      <section className="max-w-4xl mx-auto px-4 sm:px-6 pb-20">
+      <section className="max-w-4xl mx-auto px-4 sm:px-6 py-20">
         <div className="rounded-3xl p-10 sm:p-14 text-center"
              style={{ background: "linear-gradient(135deg, rgba(124,58,237,0.18), rgba(6,182,212,0.08))", border: "1px solid rgba(124,58,237,0.25)" }}>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight mb-4 leading-tight">
