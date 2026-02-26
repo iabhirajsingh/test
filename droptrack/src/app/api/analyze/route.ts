@@ -153,19 +153,51 @@ export async function POST(req: NextRequest) {
 
   const t0 = Date.now();
   try {
-    const form = await req.formData();
-    const audioFile = form.get("audio") as File | null;
-    const coverFile = form.get("cover") as File | null;
+    let buffer: Buffer;
+    let filename: string;
+    let fileType: string;
+    let hasCover = false;
+    let blobUrl: string | null = null;
 
-    if (!audioFile) {
-      return NextResponse.json({ error: "No audio file provided" }, { status: 400 });
+    const contentType = req.headers.get("content-type") || "";
+
+    if (contentType.includes("application/json")) {
+      // Large file path: receive blob URL, fetch server-side (no 4.5 MB limit)
+      const body = await req.json();
+      blobUrl = body.blobUrl;
+      filename = body.filename;
+      fileType = body.fileType || "audio/mpeg";
+      hasCover = body.hasCover || false;
+
+      if (!blobUrl) {
+        return NextResponse.json({ error: "No blobUrl provided" }, { status: 400 });
+      }
+
+      const response = await fetch(blobUrl);
+      if (!response.ok) {
+        return NextResponse.json({ error: "Failed to fetch audio from blob storage" }, { status: 500 });
+      }
+      const arrayBuffer = await response.arrayBuffer();
+      buffer = Buffer.from(arrayBuffer);
+    } else {
+      // Small file path: legacy FormData upload (stays for backwards compat)
+      const form = await req.formData();
+      const audioFile = form.get("audio") as File | null;
+      const coverFile = form.get("cover") as File | null;
+
+      if (!audioFile) {
+        return NextResponse.json({ error: "No audio file provided" }, { status: 400 });
+      }
+
+      const arrayBuffer = await audioFile.arrayBuffer();
+      buffer = Buffer.from(arrayBuffer);
+      filename = audioFile.name;
+      fileType = audioFile.type;
+      hasCover = !!coverFile;
     }
 
-    const arrayBuffer = await audioFile.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-
     // Parse existing embedded tags
-    const tags = await parseAudioTags(buffer, audioFile.type);
+    const tags = await parseAudioTags(buffer, fileType);
 
     // Generate IDs
     const isrc = (tags.isrc as string) || generateISRC();
@@ -179,15 +211,21 @@ export async function POST(req: NextRequest) {
 
     // Enrich with AI
     const aiResult = await aiEnrichMetadata(
-      audioFile.name,
+      filename,
       tags,
       tags.duration as number | undefined,
-      !!coverFile
+      hasCover
     );
+
+    // Clean up blob after processing
+    if (blobUrl) {
+      const { del } = await import("@vercel/blob");
+      await del(blobUrl).catch(() => {});
+    }
 
     // Merge: existing tags take precedence for hard data, AI fills gaps
     const metadata: Partial<TrackMetadata> = {
-      title: (tags.title as string) || aiResult.title || audioFile.name.replace(/\.[^.]+$/, ""),
+      title: (tags.title as string) || aiResult.title || filename.replace(/\.[^.]+$/, ""),
       artist: (tags.artist as string) || aiResult.artist || "Unknown Artist",
       featuredArtists: aiResult.featuredArtists || [],
       album: (tags.album as string) || aiResult.album || aiResult.title || "",
@@ -226,8 +264,8 @@ export async function POST(req: NextRequest) {
       bitrate: (tags.bitrate as number) || 0,
       sampleRate: (tags.sampleRate as number) || 44100,
       channels: (tags.channels as number) || 2,
-      format: (tags.codecName as string) || audioFile.type,
-      fileSize: audioFile.size,
+      format: (tags.codecName as string) || fileType,
+      fileSize: buffer.length,
     };
 
     return NextResponse.json({
